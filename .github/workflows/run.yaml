@@ -126,7 +126,7 @@ jobs:
         tag: ${{ env.GNB_VERSION }}
         overwrite: true
 
-    - name: Upload binaries to Github Release
+    - name: Upload binaries to QINIU BUCKET
       uses: hujiulong/action-qiniu-upload@master
       with:
         # Your qiniu access key, required.
