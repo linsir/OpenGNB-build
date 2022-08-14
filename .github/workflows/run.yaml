@@ -92,24 +92,24 @@ jobs:
         mkdir -p $GITHUB_WORKSPACE/19.07.2-ar71xx
         curl -s http://oss.apichop.com/gnb/build/openwrt-sdk-19.07.2-ar71xx-simple.tar.gz |tar -zx -C $GITHUB_WORKSPACE/19.07.2-ar71xx
 
-    - name: Start SSH via ngrok
-      uses: P3TERX/ssh2actions@main
-      with:
-        mode: ngrok
-      env:
-        # After sign up on the https://ngrok.com
-        # You can find this token here: https://dashboard.ngrok.com/auth/your-authtoken
-        NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
-        # ngrok server region [us, eu, au, ap, sa, jp, in] (optional, default: us)
-        # You can find this server region here: https://ngrok.com/docs#global-locations
-        NGROK_REGION: us
+    # - name: Start SSH via ngrok
+    #   uses: P3TERX/ssh2actions@main
+    #   with:
+    #     mode: ngrok
+    #   env:
+    #     # After sign up on the https://ngrok.com
+    #     # You can find this token here: https://dashboard.ngrok.com/auth/your-authtoken
+    #     NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
+    #     # ngrok server region [us, eu, au, ap, sa, jp, in] (optional, default: us)
+    #     # You can find this server region here: https://ngrok.com/docs#global-locations
+    #     NGROK_REGION: us
 
-        # This password you will use when authorizing via SSH
-        SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+    #     # This password you will use when authorizing via SSH
+    #     SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
 
     - name: Compile OpenGNB
       env:
-        PATH: $PATH:$GITHUB_WORKSPACE/19.07.2-ar71xx/staging_dir/toolchain-mips_24kc_gcc-7.5.0_musl/bin/
+        PATH: ${{ env.PATH }}:$GITHUB_WORKSPACE/19.07.2-ar71xx/staging_dir/toolchain-mips_24kc_gcc-7.5.0_musl/bin/
         STAGING_DIR: $GITHUB_WORKSPACE/19.07.2-ar71xx/staging_dir/
         CC: mips-openwrt-linux-gcc
         CXX: mips-openwrt-linux-g++
