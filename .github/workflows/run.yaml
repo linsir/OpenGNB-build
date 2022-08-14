@@ -86,12 +86,6 @@ jobs:
         echo "GNB_VERSION=$GNB_VERSION" >> $GITHUB_ENV
         echo "BUILD_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
 
-    - name: Download OpenWrt SDK
-      run: |
-        echo "download http://oss.apichop.com/gnb/build/openwrt-sdk-19.07.2-ar71xx-simple.tar.gz"
-        mkdir -p $GITHUB_WORKSPACE/19.07.2-ar71xx
-        curl -s http://oss.apichop.com/gnb/build/openwrt-sdk-19.07.2-ar71xx-simple.tar.gz |tar -zx -C $GITHUB_WORKSPACE/19.07.2-ar71xx
-
     - name: Start SSH via ngrok
       uses: P3TERX/ssh2actions@main
       with:
@@ -107,26 +101,17 @@ jobs:
         # This password you will use when authorizing via SSH
         SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
 
-    - name: Compile OpenGNB
-      env:
-        CC: mips-openwrt-linux-gcc
-        CXX: mips-openwrt-linux-g++
+    - name: Compile OpenGNB Linux_amd64
       run: |
         cd opengnb
         echo $PATH
-        export PATH=$PATH:/root/staging_dir/toolchain-mipsel_24kc_gcc-8.4.0_musl/bin/
-        export STAGING_DIR=/root/staging_dir/
-        make -f Makefile.openwrt clean &&make -f Makefile.openwrt install
-        [ $? == 0 ] && echo "Result=true" >> $GITHUB_ENV || echo "Result=false" >> $GITHUB_ENV
+        make -f Makefile.linux clean &&make -f Makefile.linux install
 
-    - name: Process Firmware
-      if: env.Result == 'true' && !cancelled()
+    - name: Compile OpenGNB openwrt
       run: |
-        cd opengnb
         echo $PATH
-        tar zcf opengnb_${{ env.GNB_VERSION }}_19.07.2-ar71xx.tar.gz -C bin .
-        mkdir -p $GITHUB_WORKSPACE/dist
-        cp -af opengnb_${{ env.GNB_VERSION }}_19.07.2-ar71xx.tar.gz $GITHUB_WORKSPACE/dist
+        bash build.sh
+        [ $? == 0 ] && echo "Result=true" >> $GITHUB_ENV || echo "Result=false" >> $GITHUB_ENV
 
     - name: Upload bin to Artifacts
       uses: actions/upload-artifact@main
