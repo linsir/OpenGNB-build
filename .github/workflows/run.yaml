@@ -1,0 +1,139 @@
+name: OpenGNB builder
+
+### 以下内容请保持不变 ( 请修改下方的 [环境变量设置] )
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      Tempoary_IP:
+        description: '固件 IP 地址 [可选]'
+        default: ''
+      ARCH:
+        description: '固件 IP 地址 [可选]'
+        default: ''
+### 控制部分结束 ( 以上内容请保持不变 )
+
+  #push:
+  #  branches: 
+  #    - master
+
+  #schedule:
+  #  - cron: 0 8 * * 5
+
+  #watch:
+  #  types: [started]
+
+### 环境变量设置
+env:
+# 源码仓库:分支
+  REPO_BRANCH: master
+# 上传固件到 Github Releases
+  UPLOAD_RELEASES: true
+# 上传固件到 Github Artifacts
+  UPLOAD_ARTIFACTS: false
+# 上传 bin 文件夹到 Github Artifacts
+  UPLOAD_BIN_ARTIFACTS: false
+# 删除无用文件以增加编译空间
+  DELETE_USELESS_FILES: true
+# 删除早期的 workflow 任务
+  DELETE_OLD_WORKFLOW: false
+### 结束
+
+jobs:
+  Compile:
+    runs-on: ubuntu-20.04
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+
+    steps:
+    - name: Maximize Build Space
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 5120
+        swap-size-mb: 512
+        remove-dotnet: 'true'
+        remove-android: 'true'
+
+    - name: Checkout
+      uses: actions/checkout@main
+
+    - name: Initialization Variables
+      run: |
+        echo "Free space:"
+        df -h
+
+    - name: Initialization Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E apt-get update
+        sudo -E apt-get install build-essential libncurses5-dev zlib1g-dev gawk git ccache gettext libssl-dev xsltproc zip -y
+        sudo timedatectl set-timezone "Asia/Shanghai"
+        sudo mkdir -p /workdir
+        sudo chown $USER:$GROUPS /workdir
+        if [ "${{ env.DELETE_USELESS_FILES }}" == true ]
+        then
+            docker rmi $(docker images -q)
+            sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php
+            sudo -E apt-get clean
+        fi
+
+    - name: Clone OpenGNB Source Code
+      run: |
+        git clone -b ${env.REPO_BRANCH} https://github.com/gnbdev/opengnb.git opengnb
+        ln -sf /workdir/opengnb $GITHUB_WORKSPACE/opengnb
+        cd opengnb
+        GNB_VERSION=$(cat version)
+        echo "GNB_VERSION=$GNB_VERSION" >> $GITHUB_ENV
+        echo "BUILD_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+
+    - name: Download OpenWrt SDK
+      run: |
+        echo "download http://oss.apichop.com/gnb/build/openwrt-sdk-19.07.2-ar71xx-simple.tar.gz"
+        mkdir -p $GITHUB_WORKSPACE/19.07.2-ar71xx
+        curl -s http://oss.apichop.com/gnb/build/openwrt-sdk-19.07.2-ar71xx-simple.tar.gz |tar -zx -C $GITHUB_WORKSPACE/19.07.2-ar71xx
+
+    - name: Compile OpenGNB
+      env:
+        PATH: $PATH:$GITHUB_WORKSPACE/19.07.2-ar71xx/staging_dir/toolchain-mips_24kc_gcc-7.5.0_musl/bin/
+        STAGING_DIR: $GITHUB_WORKSPACE/19.07.2-ar71xx/staging_dir/
+        CC: mips-openwrt-linux-gcc
+        CXX: mips-openwrt-linux-g++
+      run: |
+        cd opengnb
+        make -f Makefile.openwrt clean &&make -f Makefile.openwrt install
+        [ $? == 0 ] && echo "Result=true" >> $GITHUB_ENV || echo "Result=false" >> $GITHUB_ENV
+
+    - name: Process Firmware
+      if: env.Result == 'true' && !cancelled()
+      run: |
+        cd opengnb
+        tar zcf opengnb_${{ env.GNB_VERSION }}_19.07.2-ar71xx.tar.gz -C bin .
+        mkdir -p $GITHUB_WORKSPACE/dist
+        cp -af opengnb_${{ env.GNB_VERSION }}_19.07.2-ar71xx.tar.gz $GITHUB_WORKSPACE/dist
+
+    - name: Upload bin to Artifacts
+      uses: actions/upload-artifact@main
+      if: env.UPLOAD_ARTIFACTS == 'true' && env.Result == 'true' && !cancelled()
+      with:
+        name: opengnb_${{ env.GNB_VERSION }}_${{ env.BUILD_DATE }}
+        path: $GITHUB_WORKSPACE/dist
+
+    - name: Upload Firmware to Github Release
+      uses: svenstaro/upload-release-action@v2
+      if: env.UPLOAD_RELEASES == 'true' && env.Result == 'true' && !cancelled()
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: $GITHUB_WORKSPACE/dist/*
+        file_glob: true
+        tag: ${{ env.GNB_VERSION }}
+        overwrite: true
+
+    - name: Delete old Workflow Runs
+      uses: GitRML/delete-workflow-runs@main
+      if: env.DELETE_OLD_WORKFLOW == 'true' && !cancelled()
+      with:
+        retain_days: 1
+        keep_minimum_runs: 3
