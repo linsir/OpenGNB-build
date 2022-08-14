@@ -5,11 +5,8 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
-      Tempoary_IP:
-        description: '固件 IP 地址 [可选]'
-        default: ''
       ARCH:
-        description: '固件 IP 地址 [可选]'
+        description: 'ARCH [可选]'
         default: ''
 ### 控制部分结束 ( 以上内容请保持不变 )
 
