@@ -116,19 +116,12 @@ jobs:
         bash build.sh
         [ $? == 0 ] && echo "Result=true" >> $GITHUB_ENV || echo "Result=false" >> $GITHUB_ENV
 
-    - name: Upload bin to Artifacts
-      uses: actions/upload-artifact@main
-      if: env.UPLOAD_ARTIFACTS == 'true' && env.Result == 'true' && !cancelled()
-      with:
-        name: opengnb_${{ env.GNB_VERSION }}_${{ env.BUILD_DATE }}
-        path: $GITHUB_WORKSPACE/dist
-
-    - name: Upload Firmware to Github Release
+    - name: Upload binaries to Github Release
       uses: svenstaro/upload-release-action@v2
       if: env.UPLOAD_RELEASES == 'true' && env.Result == 'true' && !cancelled()
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: $GITHUB_WORKSPACE/dist/*
+        file: dist/*
         file_glob: true
         tag: ${{ env.GNB_VERSION }}
         overwrite: true
