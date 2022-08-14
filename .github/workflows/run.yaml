@@ -106,6 +106,9 @@ jobs:
         cd opengnb
         echo $PATH
         make -f Makefile.linux clean &&make -f Makefile.linux install
+        tar zcf opengnb_${{ env.GNB_VERSION }}_linux.tar.gz -C bin .
+        mkdir -p $GITHUB_WORKSPACE/dist
+        cp -af opengnb_${{ env.GNB_VERSION }}_linux.tar.gz $GITHUB_WORKSPACE/dist
 
     - name: Compile OpenGNB openwrt
       run: |
