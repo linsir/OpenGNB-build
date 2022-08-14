@@ -115,6 +115,7 @@ jobs:
         CXX: mips-openwrt-linux-g++
       run: |
         cd opengnb
+        echo $PATH
         make -f Makefile.openwrt clean &&make -f Makefile.openwrt install
         [ $? == 0 ] && echo "Result=true" >> $GITHUB_ENV || echo "Result=false" >> $GITHUB_ENV
 
