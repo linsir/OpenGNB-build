@@ -66,7 +66,7 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo -E apt-get update
-        sudo -E apt-get install build-essential libncurses5-dev zlib1g-dev gawk git ccache gettext libssl-dev xsltproc zip -y
+        sudo -E apt-get install build-essential cmake libncurses5-dev zlib1g-dev gawk git ccache gettext libssl-dev xsltproc zip -y
         sudo timedatectl set-timezone "Asia/Shanghai"
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
