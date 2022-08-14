@@ -82,7 +82,7 @@ jobs:
 
     - name: Clone OpenGNB Source Code
       run: |
-        git clone -b ${env.REPO_BRANCH} https://github.com/gnbdev/opengnb.git opengnb
+        git clone -b ${{ env.REPO_BRANCH }} https://github.com/gnbdev/opengnb.git opengnb
         ln -sf /workdir/opengnb $GITHUB_WORKSPACE/opengnb
         cd opengnb
         GNB_VERSION=$(cat version)
