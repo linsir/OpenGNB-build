@@ -109,13 +109,13 @@ jobs:
 
     - name: Compile OpenGNB
       env:
-        PATH: ${{ env.PATH }}:$GITHUB_WORKSPACE/19.07.2-ar71xx/staging_dir/toolchain-mips_24kc_gcc-7.5.0_musl/bin/
-        STAGING_DIR: $GITHUB_WORKSPACE/19.07.2-ar71xx/staging_dir/
         CC: mips-openwrt-linux-gcc
         CXX: mips-openwrt-linux-g++
       run: |
         cd opengnb
         echo $PATH
+        export PATH=$PATH:/root/staging_dir/toolchain-mipsel_24kc_gcc-8.4.0_musl/bin/
+        export STAGING_DIR=/root/staging_dir/
         make -f Makefile.openwrt clean &&make -f Makefile.openwrt install
         [ $? == 0 ] && echo "Result=true" >> $GITHUB_ENV || echo "Result=false" >> $GITHUB_ENV
 
