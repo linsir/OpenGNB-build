@@ -123,6 +123,7 @@ jobs:
       if: env.Result == 'true' && !cancelled()
       run: |
         cd opengnb
+        echo $PATH
         tar zcf opengnb_${{ env.GNB_VERSION }}_19.07.2-ar71xx.tar.gz -C bin .
         mkdir -p $GITHUB_WORKSPACE/dist
         cp -af opengnb_${{ env.GNB_VERSION }}_19.07.2-ar71xx.tar.gz $GITHUB_WORKSPACE/dist
