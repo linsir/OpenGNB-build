@@ -1,17 +1,16 @@
 name: OpenGNB builder
 
-### 以下内容请保持不变 ( 请修改下方的 [环境变量设置] )
-on:
-  repository_dispatch:
-  workflow_dispatch:
-    inputs:
-      ARCH:
-        description: 'ARCH [可选]'
-        default: ''
-### 控制部分结束 ( 以上内容请保持不变 )
+
+# on:
+#   repository_dispatch:
+#   workflow_dispatch:
+#     inputs:
+#       ARCH:
+#         description: 'ARCH [可选]'
+#         default: ''
 
   #push:
-  #  branches: 
+  #  branches:
   #    - master
 
   #schedule:
@@ -24,17 +23,12 @@ on:
 env:
 # 源码仓库:分支
   REPO_BRANCH: master
-# 上传固件到 Github Releases
+# 上传 binaries 到 Github Releases
   UPLOAD_RELEASES: true
-# 上传固件到 Github Artifacts
-  UPLOAD_ARTIFACTS: false
-# 上传 bin 文件夹到 Github Artifacts
-  UPLOAD_BIN_ARTIFACTS: false
 # 删除无用文件以增加编译空间
   DELETE_USELESS_FILES: false
 # 删除早期的 workflow 任务
   DELETE_OLD_WORKFLOW: false
-### 结束
 
 jobs:
   Compile:
@@ -86,7 +80,7 @@ jobs:
         echo "GNB_VERSION=$GNB_VERSION" >> $GITHUB_ENV
         echo "BUILD_DATE=$(date +%Y_%m_%d_%H_%M)" >> $GITHUB_ENV
 
-    - name: Compile OpenGNB Linux_amd64
+    - name: Compile OpenGNB Linux
       run: |
         cd opengnb
         echo $PATH
