@@ -92,6 +92,13 @@ jobs:
         mkdir -p $GITHUB_WORKSPACE/19.07.2-ar71xx
         curl -s http://oss.apichop.com/gnb/build/openwrt-sdk-19.07.2-ar71xx-simple.tar.gz |tar -zx -C $GITHUB_WORKSPACE/19.07.2-ar71xx
 
+    - uses: shaowenchen/debugger-action@v2
+      name: debugger
+      timeout-minutes: 30
+      continue-on-error: true
+      with:
+        ngrok_token: ${{ secrets.NGROK_TOKEN }}
+
     - name: Compile OpenGNB
       env:
         PATH: $PATH:$GITHUB_WORKSPACE/19.07.2-ar71xx/staging_dir/toolchain-mips_24kc_gcc-7.5.0_musl/bin/
