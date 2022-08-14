@@ -126,9 +126,33 @@ jobs:
         tag: ${{ env.GNB_VERSION }}
         overwrite: true
 
+    - name: Upload binaries to Github Release
+      uses: hujiulong/action-qiniu-upload@master
+        with:
+          # Your qiniu access key, required.
+          access_key: ${{ secrets.QINIU_ACCESS_KEY }}
+
+          # Your qiniu secret key, required.
+          secret_key: ${{ secrets.QINIU_SECRET_KEY }}
+
+          # Bucket name, required.
+          bucket: ${{ secrets.QINIU_BUCKET }}
+
+          # The local directory (or file) you want to upload to bucket.
+          # Default: './'
+          source_dir: 'dist'
+
+          # The directory inside of the bucket you want to upload to, namely key prefix prepended to dest file key.
+          # Default: '/'
+          dest_dir: '/gnb'
+
+          # Whether to ignore source maps.
+          # Default: true
+          ignore_source_map: true
+
     - name: Delete old Workflow Runs
       uses: GitRML/delete-workflow-runs@main
       if: env.DELETE_OLD_WORKFLOW == 'true' && !cancelled()
       with:
-        retain_days: 1
-        keep_minimum_runs: 3
+        retain_days: 3
+        keep_minimum_runs: 5
