@@ -31,7 +31,7 @@ env:
 # 上传 bin 文件夹到 Github Artifacts
   UPLOAD_BIN_ARTIFACTS: false
 # 删除无用文件以增加编译空间
-  DELETE_USELESS_FILES: true
+  DELETE_USELESS_FILES: false
 # 删除早期的 workflow 任务
   DELETE_OLD_WORKFLOW: false
 ### 结束
@@ -45,13 +45,13 @@ jobs:
       contents: write
 
     steps:
-    - name: Maximize Build Space
-      uses: easimon/maximize-build-space@master
-      with:
-        root-reserve-mb: 5120
-        swap-size-mb: 512
-        remove-dotnet: 'true'
-        remove-android: 'true'
+    # - name: Maximize Build Space
+    #   uses: easimon/maximize-build-space@master
+    #   with:
+    #     root-reserve-mb: 5120
+    #     swap-size-mb: 512
+    #     remove-dotnet: 'true'
+    #     remove-android: 'true'
 
     - name: Checkout
       uses: actions/checkout@main
