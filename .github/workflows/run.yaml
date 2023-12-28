@@ -1,13 +1,13 @@
 name: OpenGNB builder
 
 
-# on:
-#   repository_dispatch:
-#   workflow_dispatch:
-#     inputs:
-#       ARCH:
-#         description: 'ARCH [可选]'
-#         default: ''
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ARCH:
+        description: 'ARCH [可选]'
+        default: ''
 
   #push:
   #  branches:
