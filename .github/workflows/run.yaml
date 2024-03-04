@@ -5,9 +5,10 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
-      ARCH:
-        description: 'ARCH [可选]'
-        default: ''
+      DEBUG:
+        description: 'DEBUG [可选]'
+        required: false
+        default: 'false'
 
   #push:
   #  branches:
@@ -91,6 +92,7 @@ jobs:
 
     - name: Start SSH via ngrok
       uses: luchihoratiu/debug-via-ssh@main
+      if: github.event.inputs.DEBUG == 'true' && !cancelled()
       with:
           NGROK_AUTH_TOKEN: ${{ secrets.NGROK_TOKEN }}
           SSH_PASS: ${{ secrets.SSH_PASSWORD }}
