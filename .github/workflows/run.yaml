@@ -72,6 +72,13 @@ jobs:
             sudo -E apt-get clean
         fi
 
+    - name: Start SSH via ngrok
+      uses: luchihoratiu/debug-via-ssh@main
+      if: github.event.inputs.DEBUG == 'true' && !cancelled()
+      with:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+
     - name: Clone OpenGNB Source Code
       run: |
         git clone -b ${{ env.REPO_BRANCH }} https://github.com/gnbdev/opengnb.git opengnb
@@ -89,14 +96,6 @@ jobs:
         tar zcf opengnb_${{ env.GNB_VERSION }}_linux.tar.gz -C bin .
         mkdir -p $GITHUB_WORKSPACE/dist
         cp -af opengnb_${{ env.GNB_VERSION }}_linux.tar.gz $GITHUB_WORKSPACE/dist
-
-    - name: Start SSH via ngrok
-      uses: luchihoratiu/debug-via-ssh@main
-      if: github.event.inputs.DEBUG == 'true' && !cancelled()
-      with:
-          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_TOKEN }}
-          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
-
 
     - name: Compile OpenGNB openwrt
       run: |
