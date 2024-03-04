@@ -90,10 +90,10 @@ jobs:
         cp -af opengnb_${{ env.GNB_VERSION }}_linux.tar.gz $GITHUB_WORKSPACE/dist
 
     - name: Start SSH via ngrok
-    uses: luchihoratiu/debug-via-ssh@main
-    with:
-        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_TOKEN }}
-        SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+      uses: luchihoratiu/debug-via-ssh@main
+      with:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
 
 
     - name: Compile OpenGNB openwrt
