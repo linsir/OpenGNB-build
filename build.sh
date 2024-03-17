@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex -o pipefail
+
 log_info() {
     # Usage: log_info "this is the info log message"
     NOW=$(date +"%Y-%m-%d %H:%M:%S")
@@ -22,12 +24,19 @@ build_openwrt_bin(){
     toolchain_version=$2
     cpu_arch=$3
     echo_separator
-    log_info "build ${arch_version}"
+    log_info "arch_version: ${arch_version}"
+    log_info "toolchain_version: ${toolchain_version}"
+    log_info "cpu_arch: ${cpu_arch}"
     cd $GITHUB_WORKSPACE
     log_info "download http://oss.apichop.com/gnb/build/openwrt-sdk-${arch_version}-simple.tar.gz"
     mkdir -p $GITHUB_WORKSPACE/${arch_version}
     curl -s http://oss.apichop.com/gnb/build/openwrt-sdk-${arch_version}-simple.tar.gz |tar -zx -C $GITHUB_WORKSPACE/${arch_version}
 
+    if [ ! -d $GITHUB_WORKSPACE/${arch_version}/staging_dir/toolchain-${toolchain_version}/bin/ ];
+    then
+        log_info "toolchain not found"
+        exit 1
+    fi
     export PATH=$PATH:$GITHUB_WORKSPACE/${arch_version}/staging_dir/toolchain-${toolchain_version}/bin/
     export STAGING_DIR=$GITHUB_WORKSPACE/${arch_version}/staging_dir/
     export CC=${cpu_arch}-openwrt-linux-gcc
@@ -44,7 +53,7 @@ build_openwrt_bin(){
     }
 
 main(){
-    build_openwrt_bin "19.07.2-ar71xx" "toolchain-mips_24kc_gcc-7.5.0_musl" "mips"
+    build_openwrt_bin "19.07.2-ar71xx" "mips_24kc_gcc-7.5.0_musl" "mips"
     build_openwrt_bin "21.02.0-mt76x8" "mipsel_24kc_gcc-8.4.0_musl" "mipsel"
     build_openwrt_bin "22.7.7-mt7621" "mipsel_24kc_gcc-8.4.0_musl" "mipsel"
     build_openwrt_bin "23.11.20-ipq6000" "aarch64_cortex-a53_gcc-7.5.0_musl" "aarch64"
