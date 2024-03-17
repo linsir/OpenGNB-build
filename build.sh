@@ -49,3 +49,5 @@ main(){
     build_openwrt_bin "22.7.7-mt7621" "mipsel_24kc_gcc-8.4.0_musl" "mipsel"
     build_openwrt_bin "23.11.20-ipq6000" "aarch64_cortex-a53_gcc-7.5.0_musl" "aarch64"
 }
+
+main;
