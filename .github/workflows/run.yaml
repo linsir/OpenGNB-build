@@ -72,13 +72,6 @@ jobs:
             sudo -E apt-get clean
         fi
 
-    - name: Start SSH via ngrok
-      uses: luchihoratiu/debug-via-ssh@main
-      if: github.event.inputs.DEBUG == 'true' && !cancelled()
-      with:
-          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_TOKEN }}
-          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
-
     - name: Clone OpenGNB Source Code
       run: |
         git clone -b ${{ env.REPO_BRANCH }} https://github.com/gnbdev/opengnb.git opengnb
@@ -102,6 +95,13 @@ jobs:
         echo $PATH
         bash build.sh
         [ $? == 0 ] && echo "Result=true" >> $GITHUB_ENV || echo "Result=false" >> $GITHUB_ENV
+
+    - name: Start SSH via ngrok
+      uses: luchihoratiu/debug-via-ssh@main
+      if: github.event.inputs.DEBUG == 'true' && !cancelled()
+      with:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_TOKEN }}
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
 
     - name: Upload binaries to Github Release
       uses: svenstaro/upload-release-action@v2
