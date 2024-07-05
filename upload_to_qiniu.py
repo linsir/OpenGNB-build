@@ -19,7 +19,7 @@ def upload_dir_to_qiniu(access_key, secret_key, bucket_name, local_dir, remote_d
     for root, dirs, files in os.walk(local_dir):
         for file in files:
             local_file = os.path.join(root, file)
-            key = remote_dir + file
+            key = os.path.join(remote_dir, file)
             upload_file_to_qiniu(access_key, secret_key, bucket_name, key, local_file)
 
 if __name__ == '__main__':
