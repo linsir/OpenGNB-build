@@ -116,6 +116,8 @@ jobs:
     - name: Upload binaries to Qiniu
       run: |
         echo $PATH
+        python -m pip install --upgrade pip
+        pip install qiniu
         python ${{ github.action_path }}/upload_to_qiniu.py --access_key ${{ secrets.QINIU_ACCESS_KEY }} --secret_key ${{ secrets.QINIU_SECRET_KEY }} --bucket_name ${{ secrets.QINIU_BUCKET }} --local_dir dist --remote_dir /gnb/${{ env.GNB_VERSION }}
 
     - name: Delete old Workflow Runs
