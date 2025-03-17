@@ -1,0 +1,135 @@
+name: build OpenGNB for Linux and OpenWrt
+
+
+on:
+  push:
+   branches:
+     - master
+
+  #schedule:
+  #  - cron: 0 8 * * 5
+
+  #watch:
+  #  types: [started]
+
+### 环境变量设置
+env:
+# 源码仓库:分支
+  REPO_BRANCH: master
+# 上传 binaries 到 Github Releases
+  UPLOAD_RELEASES: true
+# 删除早期的 workflow 任务
+  DELETE_OLD_WORKFLOW: true
+
+jobs:
+  Compile:
+    runs-on: ubuntu-latest
+    container:
+      options: --user=root
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+
+    steps:
+    # - name: Maximize Build Space
+    #   uses: easimon/maximize-build-space@master
+    #   with:
+    #     root-reserve-mb: 5120
+    #     swap-size-mb: 512
+    #     remove-dotnet: 'true'
+    #     remove-android: 'true'
+
+    - name: Checkout
+      uses: actions/checkout@main
+      with:
+        path: 'builder'
+
+    - name: Initialization Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E apt-get update
+        sudo -E apt-get install build-essential gcc-aarch64-linux-gnu cmake git zip mingw-w64  -y
+        sudo mkdir -p /workdir
+        sudo chown $USER:$GROUPS /workdir
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        repository: gnbdev/opengnb
+        ref: ${{ env.REPO_BRANCH }}
+        path: opengnb
+
+    - name: Get GNB_VERSION from version file
+      run: |
+        cd opengnb
+        GNB_VERSION=$(cat version)
+        echo "GNB_VERSION=$GNB_VERSION" >> $GITHUB_ENV
+        echo "BUILD_DATE=$(date +%Y_%m_%d_%H_%M)" >> $GITHUB_ENV
+
+    - name: Compile OpenGNB for Linux
+      run: |
+        cd opengnb
+        echo $PATH
+        make -f Makefile.linux clean &&make -f Makefile.linux install
+        tar zcf opengnb_${{ env.GNB_VERSION }}_linux.tar.gz -C bin .
+        mkdir -p $GITHUB_WORKSPACE/dist
+        cp -af opengnb_${{ env.GNB_VERSION }}_linux.tar.gz $GITHUB_WORKSPACE/dist
+
+    - name: Compile OpenGNB for OpenWrt arm64
+      run: |
+        cd opengnb
+        export CC="aarch64-linux-gnu-gcc -static"
+        make -f Makefile.openwrt clean
+        make -f Makefile.openwrt install
+        tar zcf opengnb_${{ env.GNB_VERSION }}_openwrt_arm64.tar.gz -C bin .
+        mkdir -p $GITHUB_WORKSPACE/dist
+        cp -af opengnb_${{ env.GNB_VERSION }}_openwrt_arm64.tar.gz $GITHUB_WORKSPACE/dist
+
+
+    - name: Compile OpenGNB for OpenWrt mipsel
+      run: |
+        cd opengnb
+        curl -s https://musl.cc/mipsel-linux-musl-cross.tgz | tar xz -C /tmp/
+        echo "TOOLCHAIN_PATH=/tmp/mipsel-linux-musl-cross" >> $GITHUB_ENV
+        echo "/tmp/mipsel-linux-musl-cross/bin" >> $GITHUB_PATH  # 自动添加工具链到 PATH
+        export PATH=$PATH:/tmp/mipsel-linux-musl-cross/bin
+        export CROSS_COMPILE=mipsel-linux-musl-
+        export CC=${CROSS_COMPILE}gcc
+        export CXX=${CROSS_COMPILE}g++
+        export LD=${CROSS_COMPILE}ld
+        export AR=${CROSS_COMPILE}ar
+        export AS=${CROSS_COMPILE}as
+        make -f Makefile.openwrt clean
+        make -f Makefile.openwrt install
+        tar zcf opengnb_${{ env.GNB_VERSION }}_openwrt_mipsel.tar.gz -C bin .
+        mkdir -p $GITHUB_WORKSPACE/dist
+        cp -af opengnb_${{ env.GNB_VERSION }}_openwrt_mipsel.tar.gz $GITHUB_WORKSPACE/dist
+
+
+    - name: Compile OpenGNB for  Windows
+      run: |
+        cd opengnb
+        export PREFIX=x86_64-w64-mingw32
+        export CC=$PREFIX-gcc -static
+        export CXX=$PREFIX-g++
+        export CPP=$PREFIX-cpp
+        export LD=$PREFIX-ld
+        export RANLIB=$PREFIX-ranlib
+        export WINDRES=$PREFIX-windres
+        export PATH="/usr/x86_64-w64-mingw32/bin:$PATH"
+        export CFLAGS=-I/usr/x86_64-w64-mingw32/include/
+        export LDFLAGS=-L/usr/x86_64-w64-mingw32/lib/
+        make -f Makefile.mingw_x86_64 clean
+        make -f Makefile.mingw_x86_64 install
+        tar zcf opengnb_${{ env.GNB_VERSION }}_windows.tar.gz -C bin .
+        mkdir -p $GITHUB_WORKSPACE/dist
+        cp -af opengnb_${{ env.GNB_VERSION }}_windows.tar.gz $GITHUB_WORKSPACE/dist
+
+    - name: Upload binaries to Qiniu
+      run: |
+        echo $PATH
+        python -m pip install --upgrade pip
+        pip install qiniu
+        python builder/upload_to_qiniu.py --access_key ${{ secrets.QINIU_ACCESS_KEY }} --secret_key ${{ secrets.QINIU_SECRET_KEY }} --bucket_name ${{ secrets.QINIU_BUCKET }} --local_dir dist --remote_dir gnb/${{ env.GNB_VERSION }}

@@ -1,0 +1,107 @@
+name: build OpenGNB for macOS
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      DEBUG:
+        description: 'DEBUG [可选]'
+        required: false
+        default: 'false'
+
+
+jobs:
+  build_and_publish_opengnb:
+    runs-on: macos-latest  # GitHub 提供的 macOS 运行环境（默认 arm64）
+
+    env:
+      # 源码仓库:分支
+      REPO_BRANCH: master
+      UPLOAD_RELEASES: true
+      DELETE_OLD_WORKFLOW: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          path: 'builder'
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: gnbdev/opengnb
+          ref: ${{ env.REPO_BRANCH }}
+          path: 'opengnb'
+
+      - name: Install dependencies
+        run: |
+          brew install cmake ninja
+
+      - name: Get GNB_VERSION from version file
+        run: |
+          cd opengnb
+          GNB_VERSION=$(cat version)
+          echo "GNB_VERSION=$GNB_VERSION" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date +%Y_%m_%d_%H_%M)" >> $GITHUB_ENV
+
+      # # 编译 x86_64 版本
+      # - name: Build binary for x86_64
+      #   run: |
+      #     cd opengnb
+      #     export CC="clang -arch x86_64"
+      #     export CXX="clang++ -arch x86_64"
+      #     export LD="ld"
+      #     export AR="ar"
+      #     export RANLIB="ranlib"
+
+      #     make -f Makefile.Darwin clean
+      #     make -f Makefile.Darwin install
+      #     tar zcf opengnb_${{ env.GNB_VERSION }}_darwin_amd64.tar.gz -C bin .
+      #     mkdir -p $GITHUB_WORKSPACE/dist
+      #     cp -af opengnb_${{ env.GNB_VERSION }}_darwin_amd64.tar.gz $GITHUB_WORKSPACE/dist
+
+      # 编译 arm64 版本
+      - name: Build binary for arm64
+        run: |
+          cd opengnb
+          export CC="clang -arch arm64"
+          export CXX="clang++ -arch arm64"
+          export LD="ld"
+          export AR="ar"
+          export RANLIB="ranlib"
+
+          make -f Makefile.Darwin clean
+          make -f Makefile.Darwin install
+          tar zcf opengnb_${{ env.GNB_VERSION }}_darwin_arm64.tar.gz -C bin .
+          mkdir -p $GITHUB_WORKSPACE/dist
+          cp -af opengnb_${{ env.GNB_VERSION }}_darwin_arm64.tar.gz $GITHUB_WORKSPACE/dist
+
+      - name: Start SSH via ngrok
+        uses: luchihoratiu/debug-via-ssh@main
+        if: github.event.inputs.DEBUG == 'true' && !cancelled()
+        with:
+            NGROK_AUTH_TOKEN: ${{ secrets.NGROK_TOKEN }}
+            SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+
+      - name: Upload binaries to Github Release
+        uses: svenstaro/upload-release-action@v2
+        if: env.UPLOAD_RELEASES == 'true' && !cancelled()
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*
+          file_glob: true
+          tag: ${{ env.GNB_VERSION }}
+          overwrite: true
+
+      - name: Upload binaries to Qiniu
+        run: |
+          echo $PATH
+          python -m pip install --upgrade pip
+          pip install qiniu
+          python builder/upload_to_qiniu.py --access_key ${{ secrets.QINIU_ACCESS_KEY }} --secret_key ${{ secrets.QINIU_SECRET_KEY }} --bucket_name ${{ secrets.QINIU_BUCKET }} --local_dir dist --remote_dir gnb/${{ env.GNB_VERSION }}
+
+      - name: Delete old Workflow Runs
+        uses: GitRML/delete-workflow-runs@main
+        if: env.DELETE_OLD_WORKFLOW == 'true' && !cancelled()
+        with:
+          retain_days: 3
+          keep_minimum_runs: 5
